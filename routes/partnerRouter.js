@@ -74,7 +74,7 @@ partnerRouter
     .catch((err) => next(err))
   })
   .delete((req, res, next) => {
-    Partner.findByIdAndUpdate(req.params.partnerId)
+    Partner.findByIdAndDelete(req.params.partnerId)
     .then((response) => {
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json");

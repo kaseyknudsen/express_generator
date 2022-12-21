@@ -37,37 +37,50 @@ app.set("view engine", "jade");
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+//argument is cryptographic key that can be used by cookie parser to encrypt info, sign cookie that is sent
+//from the server to the client
+app.use(cookieParser("12345-67890-09876-54321"));
 
 //authentication goes here, if we want users to authenticate to access static files
 function auth(req, res, next) {
-  console.log(req.headers);
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    const err = new Error("You are not authenticated!");
-    res.setHeader("WWW-Authenticate", "Basic");
-    err.status = 401;
-    /* the server will send err handling back to express and challenge the client again for 
-    credentials again and again until there is an authorization header */
-    return next(err);
-  }
-  //here we are using the node global Buffer to take the authorization header and extract the username and password,
-  //putting them both into the auth array as the 1st and 2nd items
-  const auth = Buffer.from(authHeader.split(" ")[1], "base64")
-    .toString()
-    .split(":");
-  const user = auth[0];
-  const pass = auth[1];
-  if (user === "admin" && pass === "password") {
-    return next(); //authorized
+  //signedCookies object comes from cookieParser. It will automatically parse a signed cookie from the request
+  //we add user ourselves
+  if (!req.signedCookies.user) {
+    const authHeader = req.headers.authorization;
+    console.log("auth header ", authHeader);
+    if (!authHeader) {
+      const err = new Error("You are not authenticated!");
+      res.setHeader("WWW-Authenticate", "Basic");
+      err.status = 401;
+      return next(err);
+    }
+    const auth = Buffer.from(authHeader.split(" ")[1], "base64")
+      .toString()
+      .split(":");
+    const user = auth[0];
+    const pass = auth[1];
+    if (user === "admin" && pass === "password") {
+      /* res.cookie is part of express' response object API */
+      res.cookie('user', 'admin', {signed: true})
+      return next(); //authorized
+    } else {
+      const err = new Error("You are not authenticated!");
+      res.setHeader("WWW-Authenticate", "Basic");
+      err.status = 401;
+      return next(err);
+    }
   } else {
-    const err = new Error("You are not authenticated!");
-    res.setHeader("WWW-Authenticate", "Basic");
-    err.status = 401;
-    return next(err);
+    if (req.signedCookies.user === 'admin') {
+      //return next passes the client on to the next middleware function
+      return next()
+    } else {
+      const err = new Error("You are not authenticated!");
+      err.status = 401;
+      return next(err);
+    }
   }
 }
-app.use(auth)
+app.use(auth);
 
 app.use(express.static(path.join(__dirname, "public")));
 

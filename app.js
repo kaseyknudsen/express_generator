@@ -58,36 +58,20 @@ app.use(
   })
 );
 
+app.use("/", indexRouter);
+app.use("/users", usersRouter);
+
 //authentication goes here, if we want users to authenticate to access static files
 function auth(req, res, next) {
   //req.Session is automatically available with sesssion middleware
   console.log(req.Session);
-  //we write user ourselves
+  //user  we write user ourselves
   if (!req.session.user) {
-    const authHeader = req.headers.authorization;
-    console.log("auth header ", authHeader);
-    if (!authHeader) {
-      const err = new Error("You are not authenticated!");
-      res.setHeader("WWW-Authenticate", "Basic");
-      err.status = 401;
-      return next(err);
-    }
-    const auth = Buffer.from(authHeader.split(" ")[1], "base64")
-      .toString()
-      .split(":");
-    const user = auth[0];
-    const pass = auth[1];
-    if (user === "admin" && pass === "password") {
-      req.session.user = "admin";
-      return next(); //authorized
-    } else {
-      const err = new Error("You are not authenticated!");
-      res.setHeader("WWW-Authenticate", "Basic");
-      err.status = 401;
-      return next(err);
-    }
+    const err = new Error("You are not authenticated!");
+    err.status = 401;
+    return next(err);
   } else {
-    if (req.session.user === "admin") {
+    if (req.session.user === "authenticated") {
       //return next passes the client on to the next middleware function
       return next();
     } else {
@@ -101,8 +85,6 @@ app.use(auth);
 
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", indexRouter);
-app.use("/users", usersRouter);
 app.use("/campsites", campsiteRouter);
 app.use("/promotions", promotionRouter);
 app.use("/partners", partnerRouter);

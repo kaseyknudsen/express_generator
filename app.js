@@ -7,6 +7,8 @@ var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 const session = require("express-session");
 const FileStore = require("session-file-store")(session);
+const passport = require("passport");
+const authenticate = require("./authenticate");
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
@@ -58,29 +60,29 @@ app.use(
   })
 );
 
+//these middleware functions are only necessary if we are using session based authentication
+/* if there is an existing session for that client, the session data for that client
+is loaded into the request as req.user*/
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use("/", indexRouter);
 app.use("/users", usersRouter);
 
-//authentication goes here, if we want users to authenticate to access static files
 function auth(req, res, next) {
+  console.log(req.user);
   //req.Session is automatically available with sesssion middleware
   console.log(req.Session);
   //user  we write user ourselves
-  if (!req.session.user) {
+  if (!req.user) {
     const err = new Error("You are not authenticated!");
     err.status = 401;
     return next(err);
   } else {
-    if (req.session.user === "authenticated") {
-      //return next passes the client on to the next middleware function
-      return next();
-    } else {
-      const err = new Error("You are not authenticated!");
-      err.status = 401;
-      return next(err);
-    }
+    return next();
   }
 }
+
 app.use(auth);
 
 app.use(express.static(path.join(__dirname, "public")));

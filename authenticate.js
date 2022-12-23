@@ -1,12 +1,43 @@
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-const User = require('./models/user');
+const passport = require("passport");
+const LocalStrategy = require("passport-local").Strategy;
+const User = require("./models/user");
 
-//User.authenticate() will verify our username and password against the locally stored info
+
+const JwtStrategy = require("passport-jwt").Strategy;
+
+const ExtractJwt = require("passport-jwt").ExtractJwt;
+
+const jwt = require("jsonwebtoken");
+
+const config = require("./config.js");
+
 exports.local = passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-//whenever we use sessions with passport we need to do 2 operations on the user: serialization & deserialization
-/* when a user has been verified the user data has to be grabbed from the session and added to the req
-object. Deserialization is necessary in order for that to be possible*/
+
+exports.getToken = (user) => {
+  return jwt.sign(user, config.secretKey, { expiresIn: 3600 });
+};
+
+const opts = {};
+opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+opts.secretOrKey = config.secretKey;
+
+
+exports.jwtPassport = passport.use(
+  new JwtStrategy(opts, (jwt_payload, done) => {
+    console.log("JWT payload: ", jwt_payload);
+    User.findOne({ _id: jwt_payload._id }, (err, user) => {
+      if (err) {
+        return done(err, false);
+      } else if (user) {
+        return done(null, user);
+      } else {
+        return done(null, false);
+      }
+    });
+  })
+);
+
+exports.verifyUser = passport.authenticate("jwt", { session: false });

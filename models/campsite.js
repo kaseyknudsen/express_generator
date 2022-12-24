@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
@@ -18,8 +17,9 @@ const commentSchema = new Schema(
       required: true,
     },
     author: {
-      type: String,
-      required: true,
+      //here we are storing a reference instead of a name
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
   },
   {

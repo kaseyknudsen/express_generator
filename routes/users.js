@@ -5,9 +5,20 @@ const passport = require("passport");
 const authenticate = require("../authenticate");
 
 /* GET users listing. */
-router.get("/", function (req, res, next) {
-  res.send("respond with a resource");
-});
+router.get(
+  "/",
+  authenticate.verifyUser,
+  authenticate.verifyAdmin,
+  function (req, res, next) {
+    User.find()
+      .then((users) => {
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.json(users);
+      })
+      .catch((err) => next(err));
+  }
+);
 
 //this allows a new user to register on the website
 router.post("/signup", (req, res) => {
@@ -48,6 +59,9 @@ router.post("/signup", (req, res) => {
 });
 
 //this router is for user login
+//passport authenticate method handles logging in the user,
+//including challenging the user for credentials, parsing the credentials
+//from the req body
 router.post("/login", passport.authenticate("local"), (req, res) => {
   const token = authenticate.getToken({ _id: req.user._id });
   res.statusCode = 200;

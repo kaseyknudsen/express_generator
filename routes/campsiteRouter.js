@@ -5,9 +5,10 @@ const { request } = require("express");
 
 const campsiteRouter = express.Router();
 
+
 campsiteRouter
   .route("/")
-
+//GET this route gets all campsites
   .get((req, res, next) => {
     Campsite.find()
       .populate("comments.author")
@@ -18,6 +19,7 @@ campsiteRouter
       })
       .catch((err) => next(err));
   })
+  //POST need to be logged in admin to post a campsite
   .post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Campsite.create(req.body)
       .then((campsite) => {
@@ -28,10 +30,12 @@ campsiteRouter
       })
       .catch((err) => next(err));
   })
+  //PUT not available on campsites array
   .put(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end("PUT operation not supported on /campsites");
   })
+  //DELETE need to be logged in admin to delete
   .delete(
     authenticate.verifyUser,
     authenticate.verifyAdmin,
@@ -48,6 +52,7 @@ campsiteRouter
 
 campsiteRouter
   .route("/:campsiteId")
+  //GET fetches a specific campsite with campsite id in the parameters
   .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)
       .populate("comments.author")
@@ -58,12 +63,14 @@ campsiteRouter
       })
       .catch((err) => next(err));
   })
+  //POST not allowed if we are returning a specific campsite
   .post(authenticate.verifyUser, (req, res) => {
     res.statusCode = 400;
     res.end(
       `POST operation not supported on /campsites/${req.params.campsiteId}`
     );
   })
+  //PUT to update campsite, must be logged in admin
   .put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Campsite.findByIdAndUpdate(
       req.params.campsiteId,
@@ -79,6 +86,7 @@ campsiteRouter
       })
       .catch((err) => next(err));
   })
+  //DELETE must be logged in to delete a specific campsite by id
   .delete(
     authenticate.verifyUser,
     authenticate.verifyAdmin,
@@ -95,7 +103,7 @@ campsiteRouter
 
 campsiteRouter
   .route("/:campsiteId/comments")
-
+//GET get all comments from a specific campsite id
   .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)
       .populate("comments.author")
@@ -112,6 +120,7 @@ campsiteRouter
       })
       .catch((err) => next(err));
   })
+  //POST need to be logged in (not admin) to post a comment
   .post(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
       .then((campsite) => {
@@ -134,12 +143,14 @@ campsiteRouter
       })
       .catch((err) => next(err));
   })
+  //PUT not allowed when fetching the whole array of campsites
   .put(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(
       `PUT operation not supported on /campsites/${req.params.campsiteId}/comments`
     );
   })
+  //DELETE must be logged in as admin to delete all comments
   .delete(
     authenticate.verifyUser,
     authenticate.verifyAdmin,
@@ -170,6 +181,7 @@ campsiteRouter
 
 campsiteRouter
   .route("/:campsiteId/comments/:commentId")
+  //GET fetches a specific campsite with a specific comment
   .get((req, res, next) => {
     Campsite.findById(req.params.campsiteId)
       .populate("comments.author")
@@ -191,12 +203,14 @@ campsiteRouter
 
       .catch((err) => next(err));
   })
+  //POST not allowed when getting a specific comment
   .post(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(
       `POST operation not supported on /campsites/${req.params.campsiteId}/comments/${req.params.commentId}`
     );
   })
+  //PUT need to be logged in user (not admin) to update a specific comment on a specific campsite
   .put(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
 
@@ -237,6 +251,7 @@ campsiteRouter
 
       .catch((err) => next(err));
   })
+  //DELETE must be logged in (not admin) to delete your own comment
   .delete(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
       .then((campsite) => {

@@ -8,6 +8,9 @@ const userSchema = new Schema({
     type: String,
     default: ''
   },
+
+  facebookId: String,
+  
   lastname: {
     type: String,
     default: ''
@@ -16,6 +19,7 @@ const userSchema = new Schema({
     type: Boolean,
     default: true,
   },
+  
 });
 
 userSchema.plugin(passportLocalMongoose);
